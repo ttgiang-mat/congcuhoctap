@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hàm Số Lượng Giác - Lớp 11</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        body { font-family: 'Nunito', sans-serif; }
+        
+        .drag-item {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        
+        .drop-zone {
+            transition: all 0.3s ease;
+            min-height: 60px;
+        }
+        
+        .drop-zone.drag-over {
+            background-color: #ddd6fe;
+            border-color: #8b5cf6;
+            transform: scale(1.02);
+        }
+        
+        .correct-answer {
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        .wrong-answer {
+            animation: shake 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .leaderboard-item {
+            transition: all 0.3s ease;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e5e7eb); }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #d97706); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-purple-800 mb-2">📊 Hàm Số Lượng Giác - Lớp 11</h1>
+            <p class="text-lg text-gray-600">Khám phá thế giới hàm số lượng giác - Kết nối tri thức với cuộc sống!</p>
+        </div>
+
+        <!-- Game Stats -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-100 px-4 py-2 rounded-full">
+                        <span class="text-blue-800 font-semibold">Vòng <span id="currentRound">1</span>/3</span>
+                    </div>
+                    <div class="bg-green-100 px-4 py-2 rounded-full">
+                        <span class="text-green-800 font-semibold">Câu <span id="currentQuestion">1</span>/5</span>
+                    </div>
+                    <div class="bg-purple-100 px-4 py-2 rounded-full">
+                        <span class="text-purple-800 font-semibold">⏱️ <span id="questionTimer">60</span>s</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-yellow-100 px-4 py-2 rounded-full">
+                        <span class="text-yellow-800 font-semibold">Điểm: <span id="score">0</span></span>
+                    </div>
+                    <div class="bg-orange-100 px-4 py-2 rounded-full">
+                        <span class="text-orange-800 font-semibold">🕐 <span id="totalTimer">00:00</span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div id="progressBar" class="progress-bar bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="gameArea" class="bg-white rounded-2xl shadow-lg p-8">
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="text-center">
+                <div class="text-6xl mb-6">📊</div>
+                <h2 class="text-3xl font-bold text-purple-800 mb-4">Chào mừng đến với Hàm Số Lượng Giác!</h2>
+                <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+                    Trò chơi gồm 3 vòng với 15 câu hỏi về hàm số lượng giác lớp 11. 
+                    Khám phá tính chất, đồ thị và ứng dụng của các hàm sin, cos, tan, cot.
+                </p>
+                
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6 max-w-md mx-auto">
+                    <label class="block text-purple-800 font-semibold mb-3">Nhập tên của bạn:</label>
+                    <input type="text" id="playerName" placeholder="Ví dụ: Nguyễn Văn A" 
+                           class="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-500 focus:outline-none text-center text-lg font-semibold">
+                </div>
+                
+                <button onclick="startGame()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300">
+                    🚀 Bắt Đầu Học
+                </button>
+                
+                <div class="mt-8">
+                    <button onclick="showLeaderboard()" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-300">
+                        🏆 Bảng Xếp Hạng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question Area -->
+            <div id="questionArea" class="hidden">
+                <div class="text-center mb-8">
+                    <h3 id="questionTitle" class="text-2xl font-bold text-purple-800 mb-4"></h3>
+                    <div id="questionContent" class="text-lg text-gray-700"></div>
+                </div>
+
+                <!-- Multiple Choice Options -->
+                <div id="multipleChoice" class="hidden space-y-4">
+                    <div class="grid gap-4">
+                        <button class="option-btn bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl p-4 text-left transition-all duration-300 hover:scale-102" onclick="selectAnswer(0)">
+                            <span class="font-semibold text-blue-800">A.</span> <span class="ml-2"></span>
+                        </button>
+                        <button class="option-btn bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-xl p-4 text-left transition-all duration-300 hover:scale-102" onclick="selectAnswer(1)">
+                            <span class="font-semibold text-green-800">B.</span> <span class="ml-2"></span>
+                        </button>
+                        <button class="option-btn bg-yellow-50 hover:bg-yellow-100 border-2 border-yellow-200 rounded-xl p-4 text-left transition-all duration-300 hover:scale-102" onclick="selectAnswer(2)">
+                            <span class="font-semibold text-yellow-800">C.</span> <span class="ml-2"></span>
+                        </button>
+                        <button class="option-btn bg-pink-50 hover:bg-pink-100 border-2 border-pink-200 rounded-xl p-4 text-left transition-all duration-300 hover:scale-102" onclick="selectAnswer(3)">
+                            <span class="font-semibold text-pink-800">D.</span> <span class="ml-2"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sorting Game -->
+                <div id="sortingGame" class="hidden">
+                    <p class="text-center text-gray-600 mb-6">Sắp xếp các bước theo thứ tự đúng:</p>
+                    <div id="sortableItems" class="space-y-3 mb-6"></div>
+                    <div class="text-center">
+                        <button onclick="checkSortOrder()" class="bg-purple-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-600 transition-all duration-300">
+                            Kiểm Tra Thứ Tự
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Drag and Drop -->
+                <div id="dragDropGame" class="hidden">
+                    <p class="text-center text-gray-600 mb-6">Kéo thả các giá trị vào vị trí phù hợp:</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="font-semibold text-purple-800 mb-4">Các giá trị:</h4>
+                            <div id="dragItems" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-purple-800 mb-4">Công thức:</h4>
+                            <div id="dropZones" class="space-y-4"></div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-6">
+                        <button onclick="checkDragDrop()" class="bg-purple-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-600 transition-all duration-300">
+                            Kiểm Tra Kết Quả
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="resultScreen" class="hidden text-center">
+                <div id="resultIcon" class="text-6xl mb-4"></div>
+                <h3 id="resultTitle" class="text-2xl font-bold mb-4"></h3>
+                <p id="resultMessage" class="text-gray-600 mb-6"></p>
+                <button id="nextButton" onclick="nextQuestion()" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-full font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300">
+                    Câu Tiếp Theo
+                </button>
+            </div>
+
+            <!-- Final Score -->
+            <div id="finalScore" class="hidden text-center">
+                <div class="text-6xl mb-6">🏆</div>
+                <h2 class="text-3xl font-bold text-purple-800 mb-4">Chúc Mừng <span id="finalPlayerName"></span>!</h2>
+                <div class="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-2xl p-6 mb-6">
+                    <p class="text-2xl font-bold text-orange-800">Điểm Cuối Cùng: <span id="finalScoreValue">0</span>/150</p>
+                    <p class="text-lg font-semibold text-blue-800 mt-2">⏱️ Thời gian hoàn thành: <span id="finalTotalTime">00:00</span></p>
+                    <p class="text-md text-gray-600 mt-1">⚡ Thời gian trung bình mỗi câu: <span id="avgTimePerQuestion">0</span>s</p>
+                    <p id="finalMessage" class="text-gray-600 mt-3"></p>
+                    <p id="rankMessage" class="text-purple-700 font-semibold mt-3"></p>
+                </div>
+                <div class="space-y-4">
+                    <button onclick="restartGame()" class="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-green-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300">
+                        🔄 Học Lại
+                    </button>
+                    <button onclick="showLeaderboard()" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-full font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 ml-4">
+                        🏆 Xem Bảng Xếp Hạng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div id="leaderboard" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="text-5xl mb-4">🏆</div>
+                    <h2 class="text-3xl font-bold text-purple-800">Bảng Xếp Hạng</h2>
+                    <p class="text-gray-600 mt-2">Top học sinh xuất sắc nhất</p>
+                </div>
+                
+                <div id="leaderboardList" class="space-y-3 mb-8 max-h-96 overflow-y-auto">
+                    <!-- Leaderboard items will be inserted here -->
+                </div>
+                
+                <div class="text-center">
+                    <button onclick="hideLeaderboard()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
+                        ← Quay Lại
+                    </button>
+                    <button onclick="clearLeaderboard()" class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:from-red-600 hover:to-pink-600 transition-all duration-300 ml-4">
+                        🗑️ Xóa Bảng Xếp Hạng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRound = 1;
+        let currentQuestion = 1;
+        let score = 0;
+        let gameData = [];
+        let currentQuestionData = null;
+        let playerName = '';
+        let usedQuestions = { 1: [], 2: [], 3: [] };
+        
+        // Timer variables
+        let questionStartTime = 0;
+        let gameStartTime = 0;
+        let totalGameTime = 0;
+        let questionTimeLimit = 60;
+        let questionTimer = null;
+        let totalTimer = null;
+        let questionTimeLeft = 60;
+
+        // Timer functions
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function startQuestionTimer() {
+            questionTimeLeft = questionTimeLimit;
+            questionStartTime = Date.now();
+            
+            questionTimer = setInterval(() => {
+                questionTimeLeft--;
+                document.getElementById('questionTimer').textContent = questionTimeLeft;
+                
+                // Change color when time is running out
+                const timerElement = document.getElementById('questionTimer').parentElement;
+                if (questionTimeLeft <= 15) {
+                    timerElement.className = 'bg-red-100 px-4 py-2 rounded-full animate-pulse';
+                    timerElement.querySelector('span').className = 'text-red-800 font-semibold';
+                } else if (questionTimeLeft <= 30) {
+                    timerElement.className = 'bg-yellow-100 px-4 py-2 rounded-full';
+                    timerElement.querySelector('span').className = 'text-yellow-800 font-semibold';
+                }
+                
+                if (questionTimeLeft <= 0) {
+                    clearInterval(questionTimer);
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+        
+        function stopQuestionTimer() {
+            if (questionTimer) {
+                clearInterval(questionTimer);
+                questionTimer = null;
+            }
+        }
+        
+        function startTotalTimer() {
+            gameStartTime = Date.now();
+            totalTimer = setInterval(() => {
+                totalGameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                document.getElementById('totalTimer').textContent = formatTime(totalGameTime);
+            }, 1000);
+        }
+        
+        function stopTotalTimer() {
+            if (totalTimer) {
+                clearInterval(totalTimer);
+                totalTimer = null;
+            }
+        }
+        
+        function handleTimeUp() {
+            playWrongSound();
+            showResult(false, "Hết thời gian! ⏰", "Bạn đã không trả lời kịp trong 60 giây.");
+        }
+
+        // Sound effects using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(frequency, duration, type = 'sine') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function playCorrectSound() {
+            playSound(523, 0.2); // C5
+            setTimeout(() => playSound(659, 0.2), 100); // E5
+            setTimeout(() => playSound(784, 0.3), 200); // G5
+        }
+        
+        function playWrongSound() {
+            playSound(220, 0.3, 'sawtooth'); // A3
+            setTimeout(() => playSound(196, 0.4, 'sawtooth'), 150); // G3
+        }
+        
+        function playClickSound() {
+            playSound(800, 0.1, 'square');
+        }
+
+        // Game data - Hàm số lượng giác lớp 11 - Chương trình 2018
+        const questionBank = [
+            // Round 1: Multiple Choice - Tính chất cơ bản của hàm số lượng giác
+            {
+                type: 'multiple',
+                questionSets: [
+                    [
+                        {
+                            question: "Tập xác định của hàm số y = sin(x) là:",
+                            options: ["ℝ", "ℝ \\ {π/2 + kπ}", "[-1; 1]", "[0; 2π]"],
+                            correct: 0
+                        },
+                        {
+                            question: "Chu kỳ của hàm số y = cos(x) là:",
+                            options: ["π", "2π", "π/2", "4π"],
+                            correct: 1
+                        },
+                        {
+                            question: "Hàm số y = tan(x) có tập xác định là:",
+                            options: ["ℝ", "ℝ \\ {kπ}", "ℝ \\ {π/2 + kπ}", "[-1; 1]"],
+                            correct: 2
+                        },
+                        {
+                            question: "Tập giá trị của hàm số y = sin(x) là:",
+                            options: ["ℝ", "[-1; 1]", "[0; 1]", "[-π; π]"],
+                            correct: 1
+                        },
+                        {
+                            question: "Hàm số y = cos(x) là hàm số:",
+                            options: ["Chẵn", "Lẻ", "Không chẵn không lẻ", "Vừa chẵn vừa lẻ"],
+                            correct: 0
+                        }
+                    ],
+                    [
+                        {
+                            question: "Tập giá trị của hàm số y = 2sin(x) + 1 là:",
+                            options: ["[-1; 3]", "[-2; 2]", "[-1; 1]", "[1; 3]"],
+                            correct: 0
+                        },
+                        {
+                            question: "Chu kỳ của hàm số y = sin(2x) là:",
+                            options: ["2π", "π", "π/2", "4π"],
+                            correct: 1
+                        },
+                        {
+                            question: "Hàm số y = cot(x) có chu kỳ là:",
+                            options: ["2π", "π", "π/2", "4π"],
+                            correct: 1
+                        },
+                        {
+                            question: "Đồ thị hàm số y = sin(x) đi qua điểm nào sau đây?",
+                            options: ["(0; 1)", "(π/2; 1)", "(π; 1)", "(3π/2; 1)"],
+                            correct: 1
+                        },
+                        {
+                            question: "Hàm số y = sin(x) là hàm số:",
+                            options: ["Chẵn", "Lẻ", "Không chẵn không lẻ", "Vừa chẵn vừa lẻ"],
+                            correct: 1
+                        }
+                    ]
+                ]
+            },
+            // Round 2: Sorting - Các bước xác định tính chất hàm số lượng giác
+            {
+                type: 'sorting',
+                questionSets: [
+                    [
+                        {
+                            question: "Sắp xếp các bước xác định tính chất hàm số y = sin(x):",
+                            items: [
+                                "Xác định tập xác định: D = ℝ",
+                                "Xác định tập giá trị: T = [-1; 1]",
+                                "Xét tính chẵn lẻ: sin(-x) = -sin(x) (hàm lẻ)",
+                                "Xác định chu kỳ: T = 2π"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm tập giá trị của y = 3sin(x) - 2:",
+                            items: [
+                                "Xác định hàm số y = 3sin(x) - 2",
+                                "Tìm tập giá trị của sin(x): [-1; 1]",
+                                "Nhân với 3: 3sin(x) ∈ [-3; 3]",
+                                "Trừ 2: y ∈ [-5; 1]"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước xét tính chẵn lẻ của y = cos(x):",
+                            items: [
+                                "Xác định hàm số y = cos(x)",
+                                "Kiểm tra tập xác định: D = ℝ đối xứng qua gốc",
+                                "Tính cos(-x) = cos(x)",
+                                "Kết luận: hàm số chẵn"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm chu kỳ của y = sin(3x):",
+                            items: [
+                                "Xác định hàm số y = sin(3x)",
+                                "Nhận dạng dạng y = sin(ax) với a = 3",
+                                "Áp dụng công thức T = 2π/|a|",
+                                "Kết luận: T = 2π/3"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm tập xác định của y = tan(x):",
+                            items: [
+                                "Xác định hàm số y = tan(x) = sin(x)/cos(x)",
+                                "Điều kiện xác định: cos(x) ≠ 0",
+                                "Giải phương trình: cos(x) = 0 ⟺ x = π/2 + kπ",
+                                "Kết luận: D = ℝ \\ {π/2 + kπ, k ∈ ℤ}"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        }
+                    ],
+                    [
+                        {
+                            question: "Sắp xếp các bước xác định tính chất hàm số y = cos(x):",
+                            items: [
+                                "Xác định tập xác định: D = ℝ",
+                                "Xác định tập giá trị: T = [-1; 1]",
+                                "Xét tính chẵn lẻ: cos(-x) = cos(x) (hàm chẵn)",
+                                "Xác định chu kỳ: T = 2π"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm tập giá trị của y = -2cos(x) + 3:",
+                            items: [
+                                "Xác định hàm số y = -2cos(x) + 3",
+                                "Tìm tập giá trị của cos(x): [-1; 1]",
+                                "Nhân với -2: -2cos(x) ∈ [-2; 2]",
+                                "Cộng 3: y ∈ [1; 5]"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước xét tính chẵn lẻ của y = tan(x):",
+                            items: [
+                                "Xác định hàm số y = tan(x)",
+                                "Kiểm tra tập xác định đối xứng qua gốc",
+                                "Tính tan(-x) = -tan(x)",
+                                "Kết luận: hàm số lẻ"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm chu kỳ của y = cos(x/2):",
+                            items: [
+                                "Xác định hàm số y = cos(x/2)",
+                                "Nhận dạng dạng y = cos(ax) với a = 1/2",
+                                "Áp dụng công thức T = 2π/|a|",
+                                "Kết luận: T = 2π/(1/2) = 4π"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        },
+                        {
+                            question: "Sắp xếp các bước tìm tập xác định của y = cot(x):",
+                            items: [
+                                "Xác định hàm số y = cot(x) = cos(x)/sin(x)",
+                                "Điều kiện xác định: sin(x) ≠ 0",
+                                "Giải phương trình: sin(x) = 0 ⟺ x = kπ",
+                                "Kết luận: D = ℝ \\ {kπ, k ∈ ℤ}"
+                            ],
+                            correctOrder: [0, 1, 2, 3]
+                        }
+                    ]
+                ]
+            },
+            // Round 3: Drag and Drop - Hoàn thành công thức và tính chất
+            {
+                type: 'dragdrop',
+                questionSets: [
+                    [
+                        {
+                            question: "Hoàn thành công thức chu kỳ của hàm số y = sin(ax + b):",
+                            equation: "T = ___",
+                            dragItems: ["2π/|a|", "π/|a|", "2π|a|", "π|a|"],
+                            correctAnswers: ["2π/|a|"]
+                        },
+                        {
+                            question: "Hoàn thành tập giá trị của hàm số y = A·sin(x) + B:",
+                            equation: "T = [___ ; ___]",
+                            dragItems: ["B-|A|", "B+|A|", "A-B", "A+B"],
+                            correctAnswers: ["B-|A|", "B+|A|"]
+                        },
+                        {
+                            question: "Hoàn thành điều kiện xác định của y = tan(ax + b):",
+                            equation: "ax + b ≠ ___ + ___",
+                            dragItems: ["π/2", "kπ", "π", "k2π"],
+                            correctAnswers: ["π/2", "kπ"]
+                        },
+                        {
+                            question: "Hoàn thành chu kỳ của hàm số y = tan(2x):",
+                            equation: "T = ___",
+                            dragItems: ["π/2", "π", "2π", "π/4"],
+                            correctAnswers: ["π/2"]
+                        },
+                        {
+                            question: "Hoàn thành tính chất đối xứng của y = sin(x):",
+                            equation: "sin(-x) = ___",
+                            dragItems: ["-sin(x)", "sin(x)", "cos(x)", "-cos(x)"],
+                            correctAnswers: ["-sin(x)"]
+                        }
+                    ],
+                    [
+                        {
+                            question: "Hoàn thành công thức chu kỳ của hàm số y = cos(bx):",
+                            equation: "T = ___",
+                            dragItems: ["2π/|b|", "π/|b|", "2π|b|", "π|b|"],
+                            correctAnswers: ["2π/|b|"]
+                        },
+                        {
+                            question: "Hoàn thành tập giá trị của hàm số y = 3cos(x) - 1:",
+                            equation: "T = [___ ; ___]",
+                            dragItems: ["-4", "2", "-1", "3"],
+                            correctAnswers: ["-4", "2"]
+                        },
+                        {
+                            question: "Hoàn thành điều kiện xác định của y = cot(x/3):",
+                            equation: "x/3 ≠ ___",
+                            dragItems: ["kπ", "kπ/3", "k3π", "π/3"],
+                            correctAnswers: ["kπ"]
+                        },
+                        {
+                            question: "Hoàn thành chu kỳ của hàm số y = cot(x/2):",
+                            equation: "T = ___",
+                            dragItems: ["2π", "π", "π/2", "4π"],
+                            correctAnswers: ["2π"]
+                        },
+                        {
+                            question: "Hoàn thành tính chất đối xứng của y = cos(x):",
+                            equation: "cos(-x) = ___",
+                            dragItems: ["cos(x)", "-cos(x)", "sin(x)", "-sin(x)"],
+                            correctAnswers: ["cos(x)"]
+                        }
+                    ]
+                ]
+            }
+        ];
+
+        // Generate questions for current game
+        function generateQuestions() {
+            const rounds = [];
+            for (let i = 0; i < 3; i++) {
+                const questionSet = questionBank[i].questionSets[Math.floor(Math.random() * questionBank[i].questionSets.length)];
+                rounds.push({
+                    type: questionBank[i].type,
+                    questions: questionSet
+                });
+            }
+            return rounds;
+        }
+
+        let rounds = [];
+
+        function startGame() {
+            playClickSound();
+            
+            const nameInput = document.getElementById('playerName');
+            playerName = nameInput.value.trim();
+            
+            if (!playerName) {
+                alert('Vui lòng nhập tên của bạn!');
+                return;
+            }
+            
+            // Generate new questions for this game
+            rounds = generateQuestions();
+            
+            // Start total timer
+            startTotalTimer();
+            
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('questionArea').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // Leaderboard management
+        function getLeaderboard() {
+            const saved = localStorage.getItem('trigonometryFunctionLeaderboard');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        function saveToLeaderboard(name, score) {
+            const leaderboard = getLeaderboard();
+            const now = new Date();
+            
+            leaderboard.push({
+                name: name,
+                score: score,
+                totalTime: totalGameTime,
+                avgTime: Math.round(totalGameTime / 15),
+                date: now.toLocaleDateString('vi-VN'),
+                time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            // Sort by score (descending) and keep top 20
+            leaderboard.sort((a, b) => b.score - a.score);
+            const topLeaderboard = leaderboard.slice(0, 20);
+            
+            localStorage.setItem('trigonometryFunctionLeaderboard', JSON.stringify(topLeaderboard));
+            return topLeaderboard;
+        }
+
+        function showLeaderboard() {
+            playClickSound();
+            
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('finalScore').classList.add('hidden');
+            document.getElementById('leaderboard').classList.remove('hidden');
+            
+            const leaderboard = getLeaderboard();
+            const listContainer = document.getElementById('leaderboardList');
+            
+            if (leaderboard.length === 0) {
+                listContainer.innerHTML = '<div class="text-center text-gray-500 py-8">Chưa có học sinh nào. Hãy là người đầu tiên!</div>';
+                return;
+            }
+            
+            listContainer.innerHTML = leaderboard.map((player, index) => {
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'bg-gray-50';
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                
+                return `
+                    <div class="leaderboard-item ${rankClass} rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-2xl font-bold">${medal}</div>
+                            <div>
+                                <div class="font-bold text-lg">${player.name}</div>
+                                <div class="text-sm text-gray-600">${player.date} lúc ${player.time}</div>
+                                <div class="text-sm text-blue-600">⏱️ ${formatTime(player.totalTime || 0)} (TB: ${player.avgTime || 0}s/câu)</div>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-purple-800">${player.score}/150</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function hideLeaderboard() {
+            playClickSound();
+            document.getElementById('leaderboard').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+        }
+
+        function clearLeaderboard() {
+            if (confirm('Bạn có chắc muốn xóa toàn bộ bảng xếp hạng?')) {
+                localStorage.removeItem('trigonometryFunctionLeaderboard');
+                showLeaderboard();
+                playClickSound();
+            }
+        }
+
+        function loadQuestion() {
+            const roundData = rounds[currentRound - 1];
+            currentQuestionData = roundData.questions[currentQuestion - 1];
+            
+            updateUI();
+            
+            // Reset and start question timer
+            stopQuestionTimer();
+            startQuestionTimer();
+            
+            // Reset timer display color
+            const timerElement = document.getElementById('questionTimer').parentElement;
+            timerElement.className = 'bg-purple-100 px-4 py-2 rounded-full';
+            timerElement.querySelector('span').className = 'text-purple-800 font-semibold';
+            
+            // Hide all game types
+            document.getElementById('multipleChoice').classList.add('hidden');
+            document.getElementById('sortingGame').classList.add('hidden');
+            document.getElementById('dragDropGame').classList.add('hidden');
+            
+            // Show appropriate game type
+            if (roundData.type === 'multiple') {
+                showMultipleChoice();
+            } else if (roundData.type === 'sorting') {
+                showSortingGame();
+            } else if (roundData.type === 'dragdrop') {
+                showDragDropGame();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('currentRound').textContent = currentRound;
+            document.getElementById('currentQuestion').textContent = currentQuestion;
+            document.getElementById('score').textContent = score;
+            
+            const progress = ((currentRound - 1) * 5 + currentQuestion - 1) / 15 * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function showMultipleChoice() {
+            document.getElementById('questionTitle').textContent = `Câu ${currentQuestion}: Trắc Nghiệm`;
+            document.getElementById('questionContent').textContent = currentQuestionData.question;
+            document.getElementById('multipleChoice').classList.remove('hidden');
+            
+            const options = document.querySelectorAll('.option-btn span:last-child');
+            options.forEach((option, index) => {
+                option.textContent = currentQuestionData.options[index];
+            });
+        }
+
+        function selectAnswer(answerIndex) {
+            playClickSound();
+            
+            const isCorrect = answerIndex === currentQuestionData.correct;
+            if (isCorrect) {
+                score += 10;
+                playCorrectSound();
+            } else {
+                playWrongSound();
+            }
+            
+            showResult(isCorrect, isCorrect ? "Chính xác! 🎉" : "Chưa đúng! 😅", 
+                      isCorrect ? "Bạn đã chọn đáp án đúng!" : `Đáp án đúng là: ${currentQuestionData.options[currentQuestionData.correct]}`);
+        }
+
+        function showSortingGame() {
+            document.getElementById('questionTitle').textContent = `Câu ${currentQuestion}: Sắp Xếp`;
+            document.getElementById('questionContent').textContent = currentQuestionData.question;
+            document.getElementById('sortingGame').classList.remove('hidden');
+            
+            const container = document.getElementById('sortableItems');
+            container.innerHTML = '';
+            
+            // Shuffle items
+            const shuffledItems = [...currentQuestionData.items].sort(() => Math.random() - 0.5);
+            
+            shuffledItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'drag-item bg-blue-50 border-2 border-blue-200 rounded-xl p-4 cursor-move hover:bg-blue-100 transition-all duration-300';
+                div.draggable = true;
+                div.textContent = `${index + 1}. ${item}`;
+                div.dataset.originalIndex = currentQuestionData.items.indexOf(item);
+                
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+                
+                container.appendChild(div);
+            });
+        }
+
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.style.opacity = '0.5';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (this !== draggedElement) {
+                const container = this.parentNode;
+                const allItems = [...container.children];
+                const draggedIndex = allItems.indexOf(draggedElement);
+                const targetIndex = allItems.indexOf(this);
+                
+                if (draggedIndex < targetIndex) {
+                    container.insertBefore(draggedElement, this.nextSibling);
+                } else {
+                    container.insertBefore(draggedElement, this);
+                }
+                
+                // Update numbering
+                [...container.children].forEach((item, index) => {
+                    const text = item.textContent.substring(item.textContent.indexOf('.') + 2);
+                    item.textContent = `${index + 1}. ${text}`;
+                });
+            }
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            draggedElement = null;
+        }
+
+        function checkSortOrder() {
+            playClickSound();
+            
+            const items = document.querySelectorAll('#sortableItems .drag-item');
+            const currentOrder = Array.from(items).map(item => parseInt(item.dataset.originalIndex));
+            const isCorrect = JSON.stringify(currentOrder) === JSON.stringify(currentQuestionData.correctOrder);
+            
+            if (isCorrect) {
+                score += 10;
+                playCorrectSound();
+            } else {
+                playWrongSound();
+            }
+            
+            showResult(isCorrect, isCorrect ? "Sắp xếp chính xác! 🎯" : "Thứ tự chưa đúng! 🤔", 
+                      isCorrect ? "Bạn đã sắp xếp đúng thứ tự các bước!" : "Hãy xem lại thứ tự logic của các bước.");
+        }
+
+        function showDragDropGame() {
+            document.getElementById('questionTitle').textContent = `Câu ${currentQuestion}: Kéo Thả`;
+            document.getElementById('questionContent').textContent = currentQuestionData.question;
+            document.getElementById('dragDropGame').classList.remove('hidden');
+            
+            // Setup drag items
+            const dragContainer = document.getElementById('dragItems');
+            dragContainer.innerHTML = '';
+            
+            currentQuestionData.dragItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'drag-item bg-green-50 border-2 border-green-200 rounded-xl p-3 text-center cursor-move hover:bg-green-100 transition-all duration-300';
+                div.draggable = true;
+                div.textContent = item;
+                div.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item);
+                });
+                dragContainer.appendChild(div);
+            });
+            
+            // Setup drop zones
+            const dropContainer = document.getElementById('dropZones');
+            dropContainer.innerHTML = '';
+            
+            const equation = currentQuestionData.equation;
+            const parts = equation.split('___');
+            
+            parts.forEach((part, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                
+                if (part.trim()) {
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = part;
+                    textSpan.className = 'text-lg';
+                    div.appendChild(textSpan);
+                }
+                
+                if (index < parts.length - 1) {
+                    const dropZone = document.createElement('div');
+                    dropZone.className = 'drop-zone border-2 border-dashed border-purple-300 rounded-xl p-3 bg-purple-50 text-center min-w-20';
+                    dropZone.textContent = '?';
+                    dropZone.dataset.index = index;
+                    
+                    dropZone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        dropZone.classList.add('drag-over');
+                    });
+                    
+                    dropZone.addEventListener('dragleave', () => {
+                        dropZone.classList.remove('drag-over');
+                    });
+                    
+                    dropZone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const data = e.dataTransfer.getData('text/plain');
+                        dropZone.textContent = data;
+                        dropZone.classList.remove('drag-over');
+                        dropZone.classList.add('bg-purple-100', 'border-purple-400');
+                    });
+                    
+                    div.appendChild(dropZone);
+                }
+                
+                dropContainer.appendChild(div);
+            });
+        }
+
+        function checkDragDrop() {
+            playClickSound();
+            
+            const dropZones = document.querySelectorAll('.drop-zone');
+            const answers = Array.from(dropZones).map(zone => zone.textContent.trim());
+            const correctAnswers = currentQuestionData.correctAnswers;
+            
+            let isCorrect = true;
+            for (let i = 0; i < correctAnswers.length; i++) {
+                if (answers[i] !== correctAnswers[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+            
+            if (isCorrect) {
+                score += 10;
+                playCorrectSound();
+            } else {
+                playWrongSound();
+            }
+            
+            showResult(isCorrect, isCorrect ? "Kéo thả chính xác! 🎪" : "Chưa đúng vị trí! 🎭", 
+                      isCorrect ? "Bạn đã điền đúng tất cả các giá trị!" : `Đáp án đúng: ${correctAnswers.join(', ')}`);
+        }
+
+        function showResult(isCorrect, title, message) {
+            // Stop question timer
+            stopQuestionTimer();
+            
+            document.getElementById('questionArea').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            
+            document.getElementById('resultIcon').textContent = isCorrect ? '🎉' : '😅';
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+            
+            if (isCorrect) {
+                document.getElementById('resultScreen').classList.add('correct-answer');
+                setTimeout(() => {
+                    document.getElementById('resultScreen').classList.remove('correct-answer');
+                }, 600);
+            } else {
+                document.getElementById('resultScreen').classList.add('wrong-answer');
+                setTimeout(() => {
+                    document.getElementById('resultScreen').classList.remove('wrong-answer');
+                }, 600);
+            }
+            
+            updateUI();
+        }
+
+        function nextQuestion() {
+            playClickSound();
+            document.getElementById('resultScreen').classList.add('hidden');
+            
+            if (currentQuestion < 5) {
+                currentQuestion++;
+                document.getElementById('questionArea').classList.remove('hidden');
+                loadQuestion();
+            } else if (currentRound < 3) {
+                currentRound++;
+                currentQuestion = 1;
+                document.getElementById('questionArea').classList.remove('hidden');
+                loadQuestion();
+            } else {
+                showFinalScore();
+            }
+        }
+
+        function showFinalScore() {
+            // Stop total timer
+            stopTotalTimer();
+            
+            document.getElementById('finalScore').classList.remove('hidden');
+            document.getElementById('finalScoreValue').textContent = score;
+            document.getElementById('finalPlayerName').textContent = playerName;
+            
+            // Display time information
+            document.getElementById('finalTotalTime').textContent = formatTime(totalGameTime);
+            document.getElementById('avgTimePerQuestion').textContent = Math.round(totalGameTime / 15);
+            
+            let message = "";
+            if (score >= 130) {
+                message = "Xuất sắc! Bạn là bậc thầy hàm số lượng giác! 🏆";
+            } else if (score >= 100) {
+                message = "Rất tốt! Bạn đã nắm vững kiến thức! 🌟";
+            } else if (score >= 70) {
+                message = "Khá tốt! Hãy ôn tập thêm nhé! 💪";
+            } else {
+                message = "Cần cố gắng hơn! Đừng bỏ cuộc! 🚀";
+            }
+            
+            document.getElementById('finalMessage').textContent = message;
+            
+            // Save to leaderboard and show rank
+            const leaderboard = saveToLeaderboard(playerName, score);
+            const playerRank = leaderboard.findIndex(player => player.name === playerName && player.score === score) + 1;
+            
+            let rankMessage = "";
+            if (playerRank === 1) {
+                rankMessage = "🥇 Bạn đang dẫn đầu bảng xếp hạng!";
+                playCorrectSound();
+                setTimeout(() => playCorrectSound(), 300);
+                setTimeout(() => playCorrectSound(), 600);
+            } else if (playerRank <= 3) {
+                rankMessage = `🏆 Bạn đang ở vị trí thứ ${playerRank} trong bảng xếp hạng!`;
+                playCorrectSound();
+            } else if (playerRank <= 10) {
+                rankMessage = `⭐ Bạn đang ở vị trí thứ ${playerRank} trong top 10!`;
+            } else {
+                rankMessage = `📊 Bạn đang ở vị trí thứ ${playerRank} trong bảng xếp hạng.`;
+            }
+            
+            document.getElementById('rankMessage').textContent = rankMessage;
+        }
+
+        function restartGame() {
+            playClickSound();
+            
+            // Reset all variables
+            currentRound = 1;
+            currentQuestion = 1;
+            score = 0;
+            playerName = '';
+            totalGameTime = 0;
+            questionTimeLeft = 60;
+            
+            // Stop all timers
+            stopQuestionTimer();
+            stopTotalTimer();
+            
+            document.getElementById('finalScore').classList.add('hidden');
+            document.getElementById('leaderboard').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            document.getElementById('playerName').value = '';
+            
+            // Reset timer displays
+            document.getElementById('questionTimer').textContent = '60';
+            document.getElementById('totalTimer').textContent = '00:00';
+            
+            updateUI();
+        }
+
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', function initAudio() {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bc03085066daa5',t:'MTc1NDYyNDYzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
